@@ -90,6 +90,7 @@ PRI ReadData(addr) | data, crc
       debug.Str(string("Data: "))
       debug.hex((data),4)
       debug.str(string("  "))
+      ' Trying to print CRC
       'crc := ow.crc8(2, 0)
       'debug.Hex((crc), 2)
       debug.NewLine
