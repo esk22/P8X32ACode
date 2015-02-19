@@ -28,7 +28,8 @@ CON
   USEC_TICKS = CONST_CLKFREQ / 1_000_000
 
   ' 1-wire commands
-  SEARCH_ROM        = $F0
+  SEARCH_ROM         = $F0
+  READ_MEMORY        = $F0
   READ_ROM          = $33
   MATCH_ROM         = $55
   SKIP_ROM          = $CC
