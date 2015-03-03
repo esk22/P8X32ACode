@@ -5,10 +5,10 @@
 │ See end of file for terms of use. │
 └───────────────────────────────────┘
 
-multi-core-test
+multi-core-operation
 
 GE - Simultaneous Programming of Multiple ID Tags
-BridgeBuilders Group - Arun Rai, Danny Mota, Mohammad Islam, and Xin Gan
+BridgeBuilders Group
 Modified by Arun Rai - 02/20/2015
 }}
 
@@ -45,10 +45,9 @@ VAR
   long addrs4[2 * MAX_DEVICES]
   long addrs5[2 * MAX_DEVICES]
   long addrs6[2 * MAX_DEVICES]
-  
   byte c
   ' Define stacks for multi-core operation
-  ' Each COG needs space for its operaton
+  ' Each COG needs space allocated for operaton
   long  Stack1[900]
   long  Stack2[700]
   long  DataBuffer2[128]
@@ -87,7 +86,7 @@ PUB go | a
             outa[16] := 1
             waitcnt(clkfreq + cnt)
             outa[16] := 0      
-        elseif (c == "d")
+        elseif (c == "r")
             ' Multi-core reading operation
             cognew(OneWireDevice1(PIN10), @stack1[150])
             cognew(OneWireDevice2(PIN11), @stack1[300])
@@ -138,7 +137,7 @@ PRI OneWireDevice2(PIN) | i, numDevices, x
          if BYTE[addr2] == tag2#FAMILY_DS2502
             ' It's a DS2502 ID TAG. Read it.
             repeat x from 0 to 127 
-                DataBuffer2[x] := ReadDevice2(x)
+                'DataBuffer2[x] := ReadDevice2(x)
             ReadingDone[1] := 1
             ToSerialFlag[1] := 1
 
@@ -217,6 +216,7 @@ PRI OneWireDevice6(PIN) | i, numDevices, x
             ' Call function to write data to the Serial Port
             SendBytes(string("Send bytes - serial"))
             
+
 PRI ReadDevice1(a)
   tag1.reset
   repeat
