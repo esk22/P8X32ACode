@@ -8,7 +8,7 @@
 multi-core-operation
 
 GE - Simultaneous Programming of Multiple ID Tags
-BridgeBuilders Group
+BridgeBuilders Group - Arun Rai, Danny Mota, Mohammad Islam, and Xin Gan
 Modified by Arun Rai - 02/20/2015
 }}
 
