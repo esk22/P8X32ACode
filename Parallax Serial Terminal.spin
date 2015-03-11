@@ -57,6 +57,7 @@ CON
 
 VAR
 
+
   long  cog                                             'Cog flag/id
 
   long  rx_head                                         '9 contiguous longs (must keep order)
