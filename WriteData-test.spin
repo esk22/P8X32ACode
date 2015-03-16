@@ -69,7 +69,7 @@ PUB start | i, numDevices, addr, Address, x, newStr, inbyte
          'debug.Dec(x)
          ' inbyte is the data byte to write to the EPROM
          ' This is for test only
-         inbyte := 31
+         inbyte := $31
          ' Write byte at memory location x = 124
          'WriteData(124, inbyte)
          ' Read back byte from memory location x
@@ -108,7 +108,7 @@ PRI ReadData(addr) | data
       ow.writeByte(ow#READ_MEMORY)
       ow.writeByte(addr & $00FF)
       ow.writeByte((addr & $FF00) >> 8)
-      data := ow.readBits(16)
+      data := ow.readBits(16) >> 8
       debug.Str(string("Data: "))
       debug.hex((data),4)
       debug.NewLine
