@@ -34,6 +34,7 @@ CON
   READ_ROM          = $33
   READ_STATUS       = $AA
   MATCH_ROM         = $55
+  WRITE_STATUS      = $55
   SKIP_ROM          = $CC
   ALARM_SEARCH      = $EC
   READ_SCRATCHPAD   = $BE
@@ -132,7 +133,6 @@ PUB readBits(n) : b | mask
     ' Pull low briefly, then sample.
     ' Ideally we'd be sampling 15us after pulling low.
     ' Our timing won't be that accurate, but we can be close enough.
-
     dira[pin]~~
     dira[pin]~
     if ina[pin]
@@ -243,6 +243,14 @@ PRI setBit64(p, n, bit)
   else
     LONG[p] &= !|< n
 
+PUB pulse(IO_PIN)
+    dira[IO_PIN]~~
+    outa[IO_PIN] := 1
+    ' wait 480 us
+    waitcnt(constant(USEC_TICKS * 480) + cnt)
+    outa[IO_PIN] := 0
+    return
+    
 PUB crc8(n, p) : crc | b
   '' Calculate the CRC8 of 'n' bytes, starting at address 'p'.
 
