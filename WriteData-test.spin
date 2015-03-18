@@ -402,7 +402,7 @@ PRI WriteData5(addr, inbyte) | data, temp
         CRC5[2] := (addr & $FF00) >> 8
         CRC5[3] := inbyte
         if(tag5.crc8(4, @CRC5) == tag5.readBits(8))
-            tag5.pulse(19)
+            tag5.pulse(20)
             tag5.reset
             tag5.writeByte(tag5#SKIP_ROM)
             tag5.writeByte(tag5#READ_MEMORY)
@@ -441,7 +441,7 @@ PRI WriteData6(addr, inbyte) | data, temp
         CRC6[2] := (addr & $FF00) >> 8
         CRC6[3] := inbyte
         if(tag6.crc8(4, @CRC6) == tag6.readBits(8))
-            tag6.pulse(19)
+            tag6.pulse(21)
             tag6.reset
             tag6.writeByte(tag6#SKIP_ROM)
             tag6.writeByte(tag6#READ_MEMORY)
