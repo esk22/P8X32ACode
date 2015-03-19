@@ -56,7 +56,7 @@ PUB start(dataPin) : okay
   '' Initialize, using the provided data pin. Does not allocate a cog.
   '' For compatibility with OneWire.spin, always returns success.
 
-  pin := dataPin
+  pin := dataPin - 1
   outa[pin]~
   dira[pin]~
   okay~
