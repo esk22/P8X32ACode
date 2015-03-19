@@ -30,10 +30,10 @@ VAR
   byte OK
   
 PUB start | i, numDevices, addr, Address, x, newStr, inbyte
-
+  dira[16]~~
+  outa[16] := 1
   debug.Start(115_200) 
   ow.start(12)
-  w.start(13)
   repeat i from 0 to 1
     numDevices := ow.search(ow#REQUIRE_CRC, MAX_DEVICES, @addrs)
 
@@ -94,7 +94,10 @@ PRI WriteData(addr, inbyte) | data, temp, d
         CRC[2] := (addr & $FF00) >> 8
         CRC[3] := inbyte
         if(ow.crc8(4, @CRC) == ow.readBits(8))
-            ow.pulse(16)
+            outa[16] := 0
+            ' wait 480 us
+            waitcnt(constant(ow#USEC_TICKS * 480) + cnt)
+            outa[16] := 1
             ow.reset
             ow.writeByte(ow#SKIP_ROM)
             ow.writeByte(ow#READ_MEMORY)
