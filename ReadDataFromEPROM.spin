@@ -21,10 +21,6 @@ OBJ
   debug   : "Parallax Serial Terminal"      ''  Parallax Serial Terminal 
 ' ow      : "OneWire"
   ow      : "SpinOneWire"
-  f       : "FloatMath"
-  fp      : "FloatString"
-  ascii   : "ASCIIStrEngine"
-  st      : "strings"
   
 VAR
   long addrs[2 * MAX_DEVICES]
