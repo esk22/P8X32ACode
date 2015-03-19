@@ -23,21 +23,38 @@ OBJ
   ow      : "SpinOneWire"
   f       : "FloatMath"
   fp      : "FloatString"
+  ascii   : "ASCIIStrEngine"
+  st      : "strings"
   
 VAR
   long addrs[2 * MAX_DEVICES]
+  byte Buffer[128]
   
-PUB start | i, numDevices, addr, Address
+CON
 
+  WATCH_ALL     = false         'Set to TRUE to watch the sentence being built.
+  CONTINUOUS    = true          'Set to FALSE to build only one sentence per run.
+  DELAY         = 5             'Number of seconds to delay between sentences.
+  HEAP_SIZE     = 2000
+  WRAP          = $10000
+
+VAR
+  long  Seed, Heap_array[HEAP_SIZE]
+  word  Rules, Sentence
+  word  rule, lft, rgt, wrd, def, option
+  byte  Hp
+  
+PUB start | i, numDevices, addr, Address, data
+  Hp := st.start(@heap_array, HEAP_SIZE)
   debug.Start(115_200) 
-  ow.start(12)
+  ow.start(13)
 
   repeat i from 0 to 1
     numDevices := ow.search(ow#REQUIRE_CRC, MAX_DEVICES, @addrs)
 
     'debug.str(string($01, " SpinOneWire Test ", 13, 13, "Devices:"))
 
-    repeat i from 0 to MAX_DEVICES-1
+    repeat i from 0 to 1 'MAX_DEVICES-1
       debug.char(13)
     
       if i => numDevices
@@ -58,20 +75,24 @@ PUB start | i, numDevices, addr, Address
          debug.Str(string("Reading data from the momeory addressess:"))
          debug.NewLine
              repeat Address from 0 to 127
-                  ' start reading from address 0 to 127
-                  debug.Str(string("Address: "))
-                  debug.Dec(Address)
-                  debug.Str(string("    "))
-                  ' Call function to read data from EPROM
-                  ReadData(Address)
-    waitcnt(80_000_000+CNT)
+                  'start reading from address 0 to 127
+                  'debug.Str(string("Address: "))
+                  'debug.Dec(Address)
+                  'debug.Str(string("    "))
+                  'Call function to read data from EPROM
+                  ' 
+                  Buffer[Address] := ReadData(Address)
+                  debug.Hex(Buffer[Address], 2)
+                  
+                  
+    'waitcnt(80_000_000+CNT)
 
-PRI ReadData(addr) | data, crc
+PRI ReadData(addr) | data, crc, arun, rai
   ow.reset
   ow.writeByte(ow#MATCH_ROM)
   ow.writeAddress(addr)
   repeat
-    waitcnt(clkfreq/100 + cnt)
+    'waitcnt(clkfreq/100 + cnt)
     if ow.readBits(1)
       ow.reset
       ' Not exactly sure whats happening here
@@ -86,12 +107,16 @@ PRI ReadData(addr) | data, crc
       ' Not sure what 0 means.
       ow.writeByte(0)
      
-      data := ow.readBits(16)
-      debug.Str(string("Data: "))
-      debug.hex((data),4)
-      debug.str(string("  "))
-      ' Trying to print CRC
+      data := ow.readBits(16) >> 8
+      'debug.hex(Buffer[addr], 2)
+      'debug.Str(string("Data: "))
+      'debug.hex((data),2)
+      'debug.str(string("  "))
       'crc := ow.crc8(2, 0)
       'debug.Hex((crc), 2)
+      'arun := string("Arun is a computer engineering student at virginia tech doing his undergrade")
+      'rai := string("rai")
+      'bytemove((arun + strsize(arun)), rai, (strsize(rai) + 1))      eb
+      'debug.Str(arun)
       debug.NewLine
-      return
+      return data
