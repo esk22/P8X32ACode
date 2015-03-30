@@ -26,7 +26,7 @@ Description             : This program allows two way communication between a Gr
                           ID Tags (DS2502), and sends data to the GUI through Serial Port.
                           For writing data into EPROM of specific ID Tag(s), the program
                           receives tag number, starting address and ending address, and 
-                          data. The data types are barcode, D.S.R, and catalog number. 
+                          data bytes. The data types are barcode, D.S.R, and catalog number. 
                           Please, refer to the documentation for more detail.
 |************************************************************************************|
 |------------------------------------------------------------------------------------|
