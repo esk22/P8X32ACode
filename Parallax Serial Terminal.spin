@@ -389,7 +389,7 @@ Examples:
       Char("0")                                                                 'If zero digit (or only digit) output it
     i /= 10                                                                     'Update divisor
 
-PUB StrJoin(whereToPut, whereToGet) '' 5 Stack Longs
+PUB strJoin(whereToPut, whereToGet) '' 5 Stack Longs
 
 '' ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 '' // Concatenates a string onto the end of another. This method can corrupt memory.
@@ -820,7 +820,7 @@ PRI RxCheck : bytechr
     bytechr := rx_buffer[rx_tail]
     rx_tail := (rx_tail + 1) & BUFFER_MASK
 
-PRI StrToBase(stringptr, base) : value | chr, index
+PUB StrToBase(stringptr, base) : value | chr, index
 {Converts a zero terminated string representation of a number to a value in the designated base.
 Ignores all non-digit characters (except negative (-) when base is decimal (10)).}
 
