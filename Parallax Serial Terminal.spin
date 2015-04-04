@@ -389,6 +389,17 @@ Examples:
       Char("0")                                                                 'If zero digit (or only digit) output it
     i /= 10                                                                     'Update divisor
 
+PUB StrJoin(whereToPut, whereToGet) '' 5 Stack Longs
+
+'' ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+'' // Concatenates a string onto the end of another. This method can corrupt memory.
+'' //
+'' // Returns a pointer to the new string.
+'' //
+'' // WhereToPut - Address of the string to concatenate a string to.
+'' // WhereToGet - Address of where to get the string to concatenate.
+'' ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 PUB DecIn : value
 {{Receive carriage return terminated string
 of characters representing a decimal value.
