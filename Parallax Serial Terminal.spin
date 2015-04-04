@@ -400,6 +400,9 @@ PUB StrJoin(whereToPut, whereToGet) '' 5 Stack Longs
 '' // WhereToGet - Address of where to get the string to concatenate.
 '' ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  bytemove((whereToPut + strsize(whereToPut)), whereToGet, (strsize(whereToGet) + 1))
+  return whereToPut
+  
 PUB DecIn : value
 {{Receive carriage return terminated string
 of characters representing a decimal value.
