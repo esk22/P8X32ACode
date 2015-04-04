@@ -96,12 +96,6 @@ VAR
   byte counter1, counter2, counter3, counter4, counter5, counter6
   byte TagNumber
   byte dataStart[6]
-  byte CRC1[4]
-  byte CRC2[4]
-  byte CRC3[4]
-  byte CRC4[4]
-  byte CRC5[4]
-  byte CRC6[4]
   
 PUB go | a
     SetPGMLineHigh
@@ -115,7 +109,6 @@ PUB go | a
         c := tag1.ReceiveChar
         if (c == "z")
             tag1.SendStr(String("ack"))
-            'PORT.Str(string("ack"))
             DataReceiveIndicator      
         elseif (c == "r")
             ' Multi-core reading operation
