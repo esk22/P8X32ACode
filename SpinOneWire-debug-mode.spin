@@ -53,7 +53,7 @@ CON
   REQUIRE_CRC       = $100
 
 OBJ
-  debug     : "Parallax Serial Terminal"      ''  Parallax Serial Terminal 
+  'debug     : "Parallax Serial Terminal"      ''  Parallax Serial Terminal 
   system    : "Propeller Board of Education"
   PORT      : "Parallax Serial Terminal Plus"
                                               
@@ -414,11 +414,27 @@ PUB crc8(n, p) : crc | b
   
       b >>= 1     
 
+PUB strJoin(str1, str2) '' 5 Stack Longs
+  bytemove((str1 + strsize(str1)), str2, (strsize(str2) + 1))
+  return str1
+
+PUB StrToBase(stringptr, base) : value | chr, index
+{Converts a zero terminated string representation of a number to a value in the designated base.
+Ignores all non-digit characters (except negative (-) when base is decimal (10)).}
+
+  value := index := 0
+  repeat until ((chr := byte[stringptr][index++]) == 0)
+    chr := -15 + --chr & %11011111 + 39*(chr > 56)                              'Make "0"-"9","A"-"F","a"-"f" be 0 - 15, others out of range     
+    if (chr > -1) and (chr < base)                                              'Accumulate valid values into result; ignore others
+      value := value * base + chr                                                  
+  if (base == 10) and (byte[stringptr] == "-")                                  'If decimal, address negative sign; ignore otherwise
+    value := - value
+      
 PUB WriteBytesToMemory(PGM, tag) | a, erase_start, erase_end, write_start, write_end, i, data_value
     i := 0
     ReadAddressContent(0) ' Reading/Writing initiation
     if (DataTag[counter - 1] == "j")
-        erase_end := debug.StrToBase(debug.strJoin(@DataTag[dataStart+3], @DataTag[dataStart+4]), 16)
+        erase_end := StrToBase(strJoin(@DataTag[dataStart+3], @DataTag[dataStart+4]), 16)
         write_start := WriteStartAddress(erase_end + 1)
         ' No erasing data required in this case
         PORT.Str(string("Tag Number: <> "))
@@ -432,7 +448,7 @@ PUB WriteBytesToMemory(PGM, tag) | a, erase_start, erase_end, write_start, write
                 i := i + 1
             if (i == 2)
                 'add data to eprom
-                WriteData := debug.StrToBase(debug.strJoin(@DataTag[a-1],@DataTag[a]), 16)
+                WriteData := StrToBase(strJoin(@DataTag[a-1],@DataTag[a]), 16)
                 PORT.Hex(WriteData, 2)
                 if(ReadAddressContent(write_start) == $FF)
                     'ByteToMemory(write_start, WriteData, PGM, 1)
@@ -449,8 +465,8 @@ PUB WriteBytesToMemory(PGM, tag) | a, erase_start, erase_end, write_start, write
             PORT.Str(string(" <> "))
             EraseBytes(dataStart, erase_start, erase_end, PGM)
         elseif ((counter - 1) > dataStart)
-            erase_start := debug.StrToBase(debug.strJoin(@DataTag[dataStart+1], @DataTag[dataStart+2]), 16)
-            erase_end := debug.StrToBase(debug.strJoin(@DataTag[dataStart+3], @DataTag[dataStart+4]), 16)
+            erase_start := StrToBase(strJoin(@DataTag[dataStart+1], @DataTag[dataStart+2]), 16)
+            erase_end := StrToBase(strJoin(@DataTag[dataStart+3], @DataTag[dataStart+4]), 16)
             if (erase_end > 0)
                 write_start := WriteStartAddress(erase_end + 1)
                 if (erase_end > 0 and (erase_end > erase_start)) 'erase_start >= 0 and
@@ -484,7 +500,7 @@ PUB WriteBytesToMemory(PGM, tag) | a, erase_start, erase_end, write_start, write
                 if (i < 2)
                     i := i + 1
                 if (i == 2)
-                    WriteData := debug.StrToBase(debug.strJoin(@DataTag[a-1],@DataTag[a]), 16)
+                    WriteData := StrToBase(strJoin(@DataTag[a-1],@DataTag[a]), 16)
                     PORT.Hex(WriteData, 2)
                     'ByteToMemory(write_start, WriteData, PGM, 1)
                     write_start := write_start + 1
@@ -506,8 +522,8 @@ PRI WriteStartAddress(start_address) : a
 PRI EraseBytes(dataStartsAt, startEraseAt, endEraseAt, pulse) | a, i, data_value, m
     repeat a from 0 to dataStartsAt
         if (DataTag[a] == "x" or DataTag[a] == "y")
-            startEraseAt := debug.StrToBase(debug.strJoin(@DataTag[a+1], @DataTag[a+2]), 16)
-            endEraseAt := debug.StrToBase(debug.strJoin(@DataTag[a+3], @DataTag[a+4]), 16)
+            startEraseAt := StrToBase(strJoin(@DataTag[a+1], @DataTag[a+2]), 16)
+            endEraseAt := StrToBase(strJoin(@DataTag[a+3], @DataTag[a+4]), 16)
             if DataTag[a] == "x"
                 PORT.Str(string(" Erase Barcode -- Start Address <> "))
             elseif DataTag[a] == "y"
@@ -522,7 +538,7 @@ PRI EraseBytes(dataStartsAt, startEraseAt, endEraseAt, pulse) | a, i, data_value
                 if(data_value > $FF and data_value > $00)
                     'ByteToMemory(i, 0, pulse, 1)
         elseif (DataTag[a] == "z")
-            startEraseAt := debug.StrToBase(debug.strJoin(@DataTag[a+1], @DataTag[a+2]), 16)
+            startEraseAt := StrToBase(strJoin(@DataTag[a+1], @DataTag[a+2]), 16)
             i := startEraseAt
             PORT.Str(string(" Erase Catalog no -- Start Address <> "))
             PORT.Hex(startEraseAt, 2)
