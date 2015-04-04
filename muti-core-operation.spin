@@ -26,7 +26,7 @@ Description             : This program allows two way communication between a Gr
                           ID Tags (DS2502), and sends data to the GUI through Serial Port.
                           For writing data into EPROM of specific ID Tag(s), the program
                           receives tag number, starting address and ending address, and 
-                          data bytes. The data types are barcode, D.S.R, and catalog number. 
+                          data. The data types are barcode, D.S.R, and catalog number. 
                           Please, refer to the documentation for more detail.
 |************************************************************************************|
 |------------------------------------------------------------------------------------|
@@ -35,22 +35,23 @@ Description             : This program allows two way communication between a Gr
 CON
   _clkmode = xtal1 + pll16x
   _xinfreq = 5_000_000
-  MAX_DEVICES   = 1
-  ' PIN 10 - 15 will be used for
-  ' W/R operation for ID Tags (DS2502)
-  PIN10         = 09
-  PIN11         = 10
-  PIN12         = 11
-  PIN13         = 12
-  PIN14         = 13
-  PIN15         = 14
-  
-  PIN25         = 24
-  PIN26         = 25
-  PIN27         = 26
-  PIN28         = 27
-  PIN29         = 28
-  PIN30         = 29
+  MAX_DEVICE   = 1
+  ' PIN 10 - 15 are used for
+  ' data W/R operation on DS2502
+  PIN10         = 10
+  PIN11         = 11
+  PIN12         = 12
+  PIN13         = 13
+  PIN14         = 14
+  PIN15         = 15
+  ' PIN 22 - 27 are used for providing
+  ' programming pulse 
+  PIN22         = 22
+  PIN23         = 23
+  PIN24         = 24
+  PIN25         = 25
+  PIN26         = 26
+  PIN27         = 27
   
 OBJ
   tag1      : "SpinOneWire"
@@ -60,14 +61,15 @@ OBJ
   tag5      : "SpinOneWire"
   tag6      : "SpinOneWire"
   system    : "Propeller Board of Education"
+  PORT      : "Parallax Serial Terminal Plus"
   
 VAR
-  long addrs1[2 * MAX_DEVICES]
-  long addrs2[2 * MAX_DEVICES]
-  long addrs3[2 * MAX_DEVICES]
-  long addrs4[2 * MAX_DEVICES]
-  long addrs5[2 * MAX_DEVICES]
-  long addrs6[2 * MAX_DEVICES]
+  long addrs1[2 * MAX_DEVICE]
+  long addrs2[2 * MAX_DEVICE]
+  long addrs3[2 * MAX_DEVICE]
+  long addrs4[2 * MAX_DEVICE]
+  long addrs5[2 * MAX_DEVICE]
+  long addrs6[2 * MAX_DEVICE]
   byte c
   ' Allocate stack for multi-core operation
   ' Each COG needs some space for operaton
@@ -94,7 +96,6 @@ VAR
   byte counter1, counter2, counter3, counter4, counter5, counter6
   byte TagNumber
   byte dataStart[6]
-  byte CRC1[4]
   
 PUB go | a
     SetPGMLineHigh
@@ -178,7 +179,7 @@ PUB go | a
                         DataTag6[counter6]  := c
                         counter6 := counter6 + 1
                         
-            waitcnt(constant(tag1#USEC_TICKS * 10000) + cnt)
+            waitcnt(constant(tag1#USEC_TICKS * 5000) + cnt)
             CogOperation("W")
            
 PRI CogOperation(op)
@@ -191,26 +192,16 @@ PRI CogOperation(op)
         cognew(ReadDevice6, @stack1[0])     
     elseif (op == "W")
         'WriteBytesToMemory1(24)
-        {
-        WriteBytesToMemory1(PIN25)
-        WriteBytesToMemory2(PIN26)
-        WriteBytesToMemory3(PIN27)
-        WriteBytesToMemory4(PIN28)
-        WriteBytesToMemory5(PIN29)
-        WriteBytesToMemory6(PIN30)
-        }        
+        WriteBytesToMemory1(PIN22)
+        WriteBytesToMemory2(PIN23)
+        WriteBytesToMemory3(PIN24)
+        WriteBytesToMemory4(PIN25)
+        WriteBytesToMemory5(PIN26)
+        WriteBytesToMemory6(PIN27)   
         TagsInit
+        '' Writing operation ended
         tag1.SendStr(string("ended"))
-        
-        {
-        cognew(WriteBytesToMemory1(24), @stack2[300])
-        cognew(WriteBytesToMemory2(25), @stack2[600])
-        cognew(WriteBytesToMemory3(26), @stack2[900])
-        cognew(WriteBytesToMemory4(27), @stack2[1200])
-        cognew(WriteBytesToMemory5(28), @stack2[1500])
-        cognew(WriteBytesToMemory6(29), @stack2[0])     
-        }        
-           
+          
 PRI InitArray : a
     repeat a from 0 to 128
         DataBuffer2[a] := 0
@@ -224,17 +215,15 @@ PRI InitReadFlags : a
     repeat a from 0 to 6
         BytesRead[a] := 0
         BytesReady[a] := 0
-        BytesWritten[a] := 0
 
 ' Reading operation - Tag 1 
 PRI ReadDevice1 | i, numDevices, addr1, x
-    numDevices := tag1.search(tag1#REQUIRE_CRC, MAX_DEVICES, @addrs1)
-    repeat i from 0 to MAX_DEVICES
+    numDevices := tag1.search(tag1#REQUIRE_CRC, MAX_DEVICE, @addrs1)
+    repeat i from 0 to MAX_DEVICE
         if i => numDevices
             ' No device found
             BytesRead[0] := 1
             BytesReady[0] := 1
-            BytesWritten[0] := 1
         else
             addr1 := @addrs1 + (i << 3)
             if BYTE[addr1] == tag1#FAMILY_DS2502
@@ -247,28 +236,26 @@ PRI ReadDevice1 | i, numDevices, addr1, x
                     
 ' Reading operation - Tag 2
 PRI ReadDevice2 | i, numDevices, x
-    numDevices := tag2.search(tag2#REQUIRE_CRC, MAX_DEVICES, @addrs2)
-    repeat i from 0 to MAX_DEVICES
+    numDevices := tag2.search(tag2#REQUIRE_CRC, MAX_DEVICE, @addrs2)
+    repeat i from 0 to MAX_DEVICE
         if i => numDevices
             ' No device found
             BytesReady[1] := 1
-            BytesWritten[1] := 1
         else
             addr2 := @addrs2 + (i << 3)
             if BYTE[addr2] == tag2#FAMILY_DS2502
-                repeat x from 0 to 127 
+                repeat x from 0 to 127                    
                     DataBuffer2[x] := tag2.ReadAddressContent(x)
                 BytesRead[1] := 1
                 BytesReady[1] := 1
 
 ' Reading operation - Tag 3
 PRI ReadDevice3 | i, numDevices, x
-    numDevices := tag3.search(tag3#REQUIRE_CRC, MAX_DEVICES, @addrs3)
-    repeat i from 0 to MAX_DEVICES
+    numDevices := tag3.search(tag3#REQUIRE_CRC, MAX_DEVICE, @addrs3)
+    repeat i from 0 to MAX_DEVICE
         if i => numDevices
             ' No device found
             BytesReady[2] := 1
-            BytesWritten[2] := 1
         else
             addr3 := @addrs3 + (i << 3)
             if BYTE[addr3] == tag3#FAMILY_DS2502
@@ -279,8 +266,8 @@ PRI ReadDevice3 | i, numDevices, x
                         
 ' Reading operation - Tag 4  
 PRI ReadDevice4 | i, numDevices, x
-    numDevices := tag4.search(tag4#REQUIRE_CRC, MAX_DEVICES, @addrs4)
-    repeat i from 0 to MAX_DEVICES
+    numDevices := tag4.search(tag4#REQUIRE_CRC, MAX_DEVICE, @addrs4)
+    repeat i from 0 to MAX_DEVICE
         if i => numDevices
             ' No device found
             BytesReady[3] := 1
@@ -294,8 +281,8 @@ PRI ReadDevice4 | i, numDevices, x
                    
 ' Reading operation - Tag 5           
 PRI ReadDevice5 | i, numDevices, x
-    numDevices := tag5.search(tag5#REQUIRE_CRC, MAX_DEVICES, @addrs5)
-    repeat i from 0 to MAX_DEVICES
+    numDevices := tag5.search(tag5#REQUIRE_CRC, MAX_DEVICE, @addrs5)
+    repeat i from 0 to MAX_DEVICE
         if i => numDevices
             ' No device found
             BytesReady[4] := 1
@@ -309,8 +296,8 @@ PRI ReadDevice5 | i, numDevices, x
                    
 ' Reading operation - Tag 6            
 PRI ReadDevice6 | i, numDevices, x
-    numDevices := tag6.search(tag6#REQUIRE_CRC, MAX_DEVICES, @addrs6)
-    repeat i from 0 to MAX_DEVICES
+    numDevices := tag6.search(tag6#REQUIRE_CRC, MAX_DEVICE, @addrs6)
+    repeat i from 0 to MAX_DEVICE
         if i => numDevices
             ' No device found
             BytesReady[5] := 1
@@ -384,7 +371,7 @@ PRI WriteBytesToMemory1(PGM) : i
     tag1.RecordCounter(counter1)
     repeat i from 0 to (counter1 - 1)
         tag1.DataRecord(i, DataTag1[i])
-    tag1.WriteBytesToMemory(PGM) 
+    tag1.WriteBytesToMemory(PGM, 1) 
     return
  
 '' Write data bytes - Tag 2                         
@@ -394,7 +381,8 @@ PRI WriteBytesToMemory2(PGM) : i
     tag1.RecordCounter(counter2)
     repeat i from 0 to (counter2 - 1)
         tag1.DataRecord(i, DataTag2[i])
-    tag1.WriteBytesToMemory(PGM) 
+    waitcnt(constant(tag1#USEC_TICKS * 5000) + cnt)
+    tag1.WriteBytesToMemory(PGM, 2) 
     return
  
 '' Write data bytes - Tag 3   
@@ -404,7 +392,8 @@ PRI WriteBytesToMemory3(PGM) | i
     tag1.RecordCounter(counter3)
     repeat i from 0 to (counter3 - 1)
         tag1.DataRecord(i, DataTag3[i])
-    tag1.WriteBytesToMemory(PGM) 
+    waitcnt(constant(tag1#USEC_TICKS * 5000) + cnt)
+    tag1.WriteBytesToMemory(PGM, 3) 
     return
 
 '' Write data bytes - Tag 4    
@@ -414,7 +403,8 @@ PRI WriteBytesToMemory4(PGM) | i
     tag1.RecordCounter(counter4)
     repeat i from 0 to (counter4 - 1)
         tag1.DataRecord(i, DataTag4[i])
-    tag1.WriteBytesToMemory(PGM) 
+    waitcnt(constant(tag1#USEC_TICKS * 5000) + cnt)
+    tag1.WriteBytesToMemory(PGM, 4) 
     return
 
 '' Write data bytes - Tag 5    
@@ -424,7 +414,8 @@ PRI WriteBytesToMemory5(PGM) | i
     tag1.RecordCounter(counter5)
     repeat i from 0 to (counter5 - 1)
         tag1.DataRecord(i, DataTag5[i])
-    tag1.WriteBytesToMemory(PGM) 
+    waitcnt(constant(tag1#USEC_TICKS * 5000) + cnt)
+    tag1.WriteBytesToMemory(PGM, 5) 
     return
 
 '' Write data bytes - Tag 6
@@ -434,7 +425,8 @@ PRI WriteBytesToMemory6(PGM) | i
     tag1.RecordCounter(counter6)
     repeat i from 0 to (counter6 - 1)
         tag1.DataRecord(i, DataTag6[i])
-    tag1.WriteBytesToMemory(PGM) 
+    waitcnt(constant(tag1#USEC_TICKS * 5000) + cnt)
+    tag1.WriteBytesToMemory(PGM, 6) 
     return
 
 '' Turn on LEDs P16 when data/command
@@ -458,18 +450,18 @@ PRI SendChipSerialNo(address)
 '' The driver circuit is active low circuit. The circuit
 '' provides a 12V pulse to an ID Tag when the PGM line is low.
 PRI SetPGMLineHigh
-    dira[24]~~
-    outa[24] := 1
-    dira[25]~~
-    outa[25] := 1
-    dira[26]~~
-    outa[26] := 1
-    dira[27]~~
-    outa[27] := 1
-    dira[28]~~
-    outa[28] := 1
-    dira[29]~~
-    outa[29] := 1
+    dira[PIN22]~~
+    outa[PIN22] := 1
+    dira[PIN23]~~
+    outa[PIN23] := 1
+    dira[PIN24]~~
+    outa[PIN24] := 1
+    dira[PIN25]~~
+    outa[PIN25] := 1
+    dira[PIN26]~~
+    outa[PIN26] := 1
+    dira[PIN27]~~
+    outa[PIN27] := 1
 
 '' Initial PIN configuration for R/W operations              
 PRI TagsInit
@@ -479,9 +471,4 @@ PRI TagsInit
     tag4.start(PIN13)
     tag5.start(PIN14)
     tag6.start(PIN15)
-    tag1.ReadAddressContent(0)
-    tag2.ReadAddressContent(0)
-    tag3.ReadAddressContent(0)
-    tag4.ReadAddressContent(0)
-    tag5.ReadAddressContent(0)
-    tag6.ReadAddressContent(0)
+    
