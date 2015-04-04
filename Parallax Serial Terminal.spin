@@ -1,28 +1,60 @@
-{{
-─────────────────────────────────────────────────
-File: Parallax Serial Terminal.spin
-Version: 1.0
-Copyright (c) 2009 Parallax, Inc.
-See end of file for terms of use.
+{{Parallax Serial Terminal Plus.spin
 
-Authors: Jeff Martin, Andy Lindsay, Chip Gracey  
-─────────────────────────────────────────────────
+This object is made for direct use with the
+Parallax Serial Terminal; a simple serial
+communication program available with the
+Propeller Tool installer and also separately
+via the Parallax website (www.parallax.com).
+
+See end of file for author, version,
+copyright and terms of use.
+
+This object launches a cog for 2-way,
+high speed communication with Parallax
+Serial Terminal software that you can run
+on your PC.  It launches as soon as you call
+one of its methods, with settings that match
+the Parallax Serial Terminal's defaults.
+
+You can also call the Start Method for
+a different baud rate, or StartRxTx for
+custom configurations.
+
+Examples in each method's documentation
+assume that this object was declared in a
+program and nicknamed pst, with the system
+clock set to run at 80 MHz using the
+Propeller Board of Education's 5 MHz
+crystal oscillator.  Like this:
+
+Example Program with pst Nickname
+┌──────────────────────────────────────────┐
+│''Hello message to Parallax Serial        │
+│''Terminal                                │
+│OJB                                       │
+│ pst : "Parallax Serial Terminal Plus"    │
+│ system: "Propeller Board of Education"   │
+│                                          │
+│PUB Go                                    │
+│ system.Clock(80_000_000)  '80 Mhz clock  │
+│ pst.Str(string("Hello!")) 'Message to PST│
+└──────────────────────────────────────────┘
+
+IMPORTANT: Make sure to click the Parallax 
+           Serial Terminal's Enable button,
+           either while the program is 
+           loading or within 1 second    
+           afterwards.  Otherwise, you will
+           miss the message.
+
+BUGS       Please send bug reports, questions, 
+&          suggestions, and improved versions 
+UPDATES    of this object to alindsay@parallax.com.
+           Also, check learn.parallax.com
+           periodically for updated versions.
+           
 }}
 
-{
-HISTORY:
-  This object is made for direct use with the Parallax Serial Terminal; a simple serial communication program
-  available with the Propeller Tool installer and also separately via the Parallax website (www.parallax.com).
-
-  This object is heavily based on FullDuplexSerialPlus (by Andy Lindsay), which is itself heavily based on
-  FullDuplexSerial (by Chip Gracey).
-
-USAGE:
-  • Call Start, or StartRxTx, first.
-  • Be sure to set the Parallax Serial Terminal software to the baudrate specified in Start, and the proper COM port.
-  • At 80 MHz, this object properly receives/transmits at up to 250 Kbaud, or performs transmit-only at up to 1 Mbaud.
-  
-}
   
 CON
 ''
@@ -57,7 +89,6 @@ CON
 
 VAR
 
-
   long  cog                                             'Cog flag/id
 
   long  rx_head                                         '9 contiguous longs (must keep order)
@@ -76,29 +107,69 @@ VAR
   byte  str_buffer[MAXSTR_LENGTH+1]                     'String buffer for numerical strings
 
 PUB Start(baudrate) : okay
-{{Start communication with the Parallax Serial Terminal using the Propeller's programming connection.
-Waits 1 second for connection, then clears screen.
-  Parameters:
-    baudrate - bits per second.  Make sure it matches the Parallax Serial Terminal's
-               Baud Rate field.
-  Returns    : True (non-zero) if cog started, or False (0) if no cog is available.}}
+{{Start communication with the Parallax
+Serial Terminal using the Propeller's
+programming connection.
+Waits 1 second for connection, then clears
+screen.
+
+IMPORTANT: You do not need to call this
+method if you just want to send messages
+to the Parallax Serial Terminal at its
+default baudrate of 115.2 kbps.  Any
+method call will call this start method
+with the default baud rate if it has not
+already been called.
+
+Parameters:
+  baudrate - bits per second.  Make sure it
+  matches the Parallax Serial Terminal's
+  Baud Rate field.
+
+Returns:
+  True (non-zero) if cog started
+  False (0) if no cog is available.
+
+Example:
+  'Start communication with the
+  'Parallax Serial Terminal at a baud
+  'rate of 115.2 kbps.
+
+  pst.Start(115_2000)  
+}}
 
   okay := StartRxTx(31, 30, 0, baudrate)
   waitcnt(clkfreq + cnt)                                'Wait 1 second for PST
   Clear                                                 'Clear display
 
 PUB StartRxTx(rxpin, txpin, mode, baudrate) : okay
-{{Start serial communication with designated pins, mode, and baud.
-  Parameters:
-    rxpin    - input pin; receives signals from external device's TX pin.
-    txpin    - output pin; sends signals to  external device's RX pin.
-    mode     - signaling mode (4-bit pattern).
-               bit 0 - inverts rx.
-               bit 1 - inverts tx.
-               bit 2 - open drain/source tx.
-               bit 3 - ignore tx echo on rx.
-    baudrate - bits per second.
-  Returns    : True (non-zero) if cog started, or False (0) if no cog is available.}}
+{{Start serial communication with designated
+pins, mode, and baud.
+
+Parameters:
+  rxpin    - input pin; receives signals
+             from external device's TX pin.
+  txpin    - output pin; sends signals to
+             external device's RX pin.
+  mode     - signaling mode (4-bit pattern).
+             bit 0 - inverts rx.
+             bit 1 - inverts tx.
+             bit 2 - open drain/source tx.
+             bit 3 - ignore tx echo on rx.
+  baudrate - bits per second.
+
+Returns:
+  True (non-zero) if cog started
+  False (0) if no cog is available.
+
+Example:
+  'Start communication with the
+  'Parallax Serial Terminal at a baud
+  'rate of 115.2 kbps using the serial
+  'programming and communication pins.
+
+  pst.StartRxTx(31,30,0,115_200)
+}}
 
   stop
   longfill(@rx_head, 0, 4)
@@ -115,9 +186,23 @@ PUB Stop
   longfill(@rx_head, 0, 9)
 
 PUB Char(bytechr)
-{{Send single-byte character.  Waits for room in transmit buffer if necessary.
-  Parameter:
-    bytechr - character (ASCII byte value) to send.}}
+{{Send single-byte character.  Waits for
+room in transmit buffer if necessary.
+
+Parameter:
+  bytechr - character (ASCII byte value)
+            to send.
+
+Eamples:
+  'Send "A" to Parallax Serial Terminal
+  pst.Char("A")
+  'Send "A" to Parallax Serial Terminal
+  'using its ASCII value
+  pst.Char(65)              
+}}
+
+  ifnot cog
+    start(115_200)
 
   repeat until (tx_tail <> ((tx_head + 1) & BUFFER_MASK))
   tx_buffer[tx_head] := bytechr
@@ -127,45 +212,137 @@ PUB Char(bytechr)
     CharIn
 
 PUB Chars(bytechr, count)
-{{Send multiple copies of a single-byte character. Waits for room in transmit buffer if necessary.
-  Parameters:
-    bytechr - character (ASCII byte value) to send.
-    count   - number of bytechrs to send.}}
+{{Send multiple copies of a single-byte
+character. Waits for room in transmit buffer
+if necessary.
+
+Parameters:
+  bytechr - character (ASCII byte value) to
+            send.
+  count   - number of bytechrs to send.
+
+Example:
+  'Send "AAAAA" to Parallax Serial Terminal
+  pst.Chars("A", 5)
+  }}
+ 
+  ifnot cog
+    start(115_200)
 
   repeat count
     Char(bytechr)
 
 PUB CharIn : bytechr
-{{Receive single-byte character.  Waits until character received.
-  Returns: $00..$FF}}
+{{Receive single-byte character.  Waits
+until character received.
+
+Returns:
+  A byte value (0 to 255) which
+  represents a character that has been typed 
+  into the Parallax Serial Terminal.
+
+Example:
+  ' Get a character that is typed into the
+  ' Parallax Serial Terminal, and copy it to
+  ' a variable named c.
+  c := pst.CharIn
+}}
+
+  ifnot cog
+    start(115_200)
 
   repeat while (bytechr := RxCheck) < 0
 
 PUB Str(stringptr)
 {{Send zero terminated string.
-  Parameter:
-    stringptr - pointer to zero terminated string to send.}}
+Parameter:
+  stringptr - pointer to zero terminated
+              string to send.
+
+Examples:
+  ''Send string with String operator.
+  pst.Str(String("Hello!"))
+
+  ''Send string from DAT block
+  '...code omitted
+  PUB Go
+    pst.Str(@myDatString)
+  DAT
+    myDatString byte "abcdefg", 0
+    '                           
+    '        Zero terminator ───┘
+}}
+
+  ifnot cog
+    start(115_200)
 
   repeat strsize(stringptr)
     Char(byte[stringptr++])
 
 PUB StrIn(stringptr)
-{{Receive a string (carriage return terminated) and stores it (zero terminated) starting at stringptr.
-Waits until full string received.
-  Parameter:
-    stringptr - pointer to memory in which to store received string characters.
-                Memory reserved must be large enough for all string characters plus a zero terminator.}}
-    
+{{Receive a string (carriage return
+terminated) and stores it  (zero terminated)
+starting at stringptr.  Waits until full
+string received.
+Parameter:
+  stringptr - pointer to memory in which to
+    store received string characters.
+    Memory reserved must be large enough for
+    all string characters plus a zero
+    terminator.
+
+Example:
+
+  ' Get a string that's up to 100 characters
+  ' long (including zero terminator) from
+  ' the Parallax Serial Terminal.
+  '...code omitted
+  VAR
+    byte mystr(100)
+  PUB Go
+    '... code omitted
+    pst.StrIn(@mystr)
+}}
+  
+  ifnot cog
+    start(115_200)
+
   StrInMax(stringptr, -1)
 
 PUB StrInMax(stringptr, maxcount)
-{{Receive a string of characters (either carriage return terminated or maxcount in length) and stores it (zero terminated)
-starting at stringptr.  Waits until either full string received or maxcount characters received.
-  Parameters:
-    stringptr - pointer to memory in which to store received string characters.
-                Memory reserved must be large enough for all string characters plus a zero terminator (maxcount + 1).
-    maxcount  - maximum length of string to receive, or -1 for unlimited.}}
+{{Receives a string of characters (either
+carriage return terminated or maxcount in
+length) and stores it (zero terminated)
+starting at stringptr.  Waits until either
+full string received or maxcount characters
+received.
+
+Parameters:
+  stringptr - pointer to memory in which to
+  store received string characters. Memory
+  reserved must be large enough for all
+  string characters plus a zero terminator
+  (maxcount + 1).  maxcount  - maximum
+  length of string to receive, or -1 for
+  unlimited.
+
+Example:
+  ' Get a string that's up to 100 characters
+  ' long (including zero terminator) from
+  ' the Parallax Serial Terminal.  ...and
+  ' make sure that the string buffer isn't
+  ' overloaded.
+  '...code omitted
+  VAR
+    byte mystr(100)
+  PUB Go
+    '... code omitted
+    pst.StrInMax(@mystr, 99)
+}}
     
+  ifnot cog
+    start(115_200)
+
   repeat while (maxcount--)                                                     'While maxcount not reached
     if (byte[stringptr++] := CharIn) == NL                                      'Get chars until NL
       quit
@@ -173,8 +350,28 @@ starting at stringptr.  Waits until either full string received or maxcount char
 
 PUB Dec(value) | i, x
 {{Send value as decimal characters.
-  Parameter:
-    value - byte, word, or long value to send as decimal characters.}}
+Parameter:
+  value - byte, word, or long value to
+  send as decimal characters.
+ 
+Examples:
+
+  'Display 100 in Parallax Serial Terminal
+  pst.Dec(100)
+
+  'Display variable value as decimal in
+  'Parallax Serial Terminal.
+  '...code omitted
+  VAR
+    long val
+  PUB Go
+    '... code omitted
+    val := 100
+    pst.Dec(val)
+}}
+
+  ifnot cog
+    start(115_200)
 
   x := value == NEGX                                                            'Check for max negative
   if value < 0
@@ -193,141 +390,410 @@ PUB Dec(value) | i, x
     i /= 10                                                                     'Update divisor
 
 PUB DecIn : value
-{{Receive carriage return terminated string of characters representing a decimal value.
-  Returns: the corresponding decimal value.}}
+{{Receive carriage return terminated string
+of characters representing a decimal value.
+
+Returns: the corresponding decimal value.
+
+Example:
+
+  ' Get a decimal value that is typed into
+  ' the Parallax Serial Terminal's
+  ' Transmit windowpane.
+  '...code omitted
+  VAR
+    long val
+  PUB Go
+    '...code omitted
+    val := pst.DecIn
+  }}
+
+  ifnot cog
+    start(115_200)
 
   StrInMax(@str_buffer, MAXSTR_LENGTH)
   value := StrToBase(@str_buffer, 10)
 
 PUB Bin(value, digits)
-{{Send value as binary characters up to digits in length.
-  Parameters:
-    value  - byte, word, or long value to send as binary characters.
-    digits - number of binary digits to send.  Will be zero padded if necessary.}}
+{{Send value as binary characters up to
+digits in length.
+
+Parameters:
+  value  - byte, word, or long value to send
+           as binary characters.
+  digits - number of binary digits to send.
+           Will be zero padded if necessary.
+
+Examples:
+
+  'Display decimal-10 as a binary value in
+  'the Parallax Serial Terminal.  The result
+  'should be 1010, which is binary for 10.
+  pst.Bin(10, 4)
+
+  'Display variable value as binary in
+  'Parallax Serial Terminal.  Also, try
+  'val := %1010.  The % operator means you
+  'are using a binary value instead of a
+  'decimal one.
+  '...code omitted
+  VAR
+    long val
+  PUB Go
+    '... code omitted
+    val := 10
+    pst.Bin(val, 4)
+}}
+   
+  ifnot cog
+    start(115_200)
 
   value <<= 32 - digits
   repeat digits
     Char((value <-= 1) & 1 + "0")
 
 PUB BinIn : value
-{{Receive carriage return terminated string of characters representing a binary value.
- Returns: the corresponding binary value.}}
+{{Receive carriage return terminated string
+of characters representing a binary value.
+
+Returns:
+  the corresponding binary value.
+
+Example:
+
+  ' Get a binary value that is typed into
+  ' the Parallax Serial Terminal's
+  ' Transmit windowpane.
+  '...code omitted
+  VAR
+    long val
+  PUB Go
+    '...code omitted
+    val := pst.BinIn
+}}
    
+  ifnot cog
+    start(115_200)
+
   StrInMax(@str_buffer, MAXSTR_LENGTH)
   value := StrToBase(@str_buffer, 2)
    
 PUB Hex(value, digits)
-{{Send value as hexadecimal characters up to digits in length.
-  Parameters:
-    value  - byte, word, or long value to send as hexadecimal characters.
-    digits - number of hexadecimal digits to send.  Will be zero padded if necessary.}}
+{{Send value as hexadecimal characters up to
+digits in length.
+Parameters:
+  value  - byte, word, or long value to send
+           as hexadecimal characters.
+  digits - number of hexadecimal digits to
+           send.  Will be zero padded if
+           necessary.
+
+Examples:
+
+  'Display decimal-10 as a hexadecimal value
+  'in the Parallax Serial Terminal.  The
+  'result should be the hexadecimal 0A.
+  pst.Hex(10, 2)
+
+  'Display variable value as hexadecmial in
+  'Parallax Serial Terminal.  Also, try
+  'val := $A.  The $ operator means you
+  'are using a hexadecimal value instead of
+  'a decimal one.
+  '...code omitted
+  VAR
+    long val
+  PUB Go
+    '... code omitted
+    val := 10
+    pst.Hex(val, 2)
+}}
+ 
+  ifnot cog
+    start(115_200)
 
   value <<= (8 - digits) << 2
   repeat digits
     Char(lookupz((value <-= 4) & $F : "0".."9", "A".."F"))
 
 PUB HexIn : value
-{{Receive carriage return terminated string of characters representing a hexadecimal value.
-  Returns: the corresponding hexadecimal value.}}
+{{Receive carriage return terminated string
+of characters representing a hexadecimal
+value.
+  Returns: the corresponding hexadecimal
+  value.
+
+Example:
+
+  ' Get a binary value that is typed into
+  ' the Parallax Serial Terminal's
+  ' Transmit windowpane.
+  '...code omitted
+  VAR
+    long val
+  PUB Go
+    '...code omitted
+    val := pst.BinIn
+}}
+
+  ifnot cog
+    start(115_200)
 
   StrInMax(@str_buffer, MAXSTR_LENGTH)
   value := StrToBase(@str_buffer, 16)
 
 PUB Clear
-{{Clear screen and place cursor at top-left.}}
+{{Clear screen and place cursor at top-left.
+
+Example:
+  pst.Clear
+}}
   
+  ifnot cog
+    start(115_200)
+
   Char(CS)
 
 PUB ClearEnd
-{{Clear line from cursor to end of line.}}
+{{Clear line from cursor to end of line.
+
+Example:
+  pst.ClearEnd
+}}
   
+  ifnot cog
+    start(115_200)
+
   Char(CE)
   
 PUB ClearBelow
-{{Clear all lines below cursor.}}
+{{Clear all lines below cursor.
+
+Example:
+  pst.ClearBelow
+}}
   
+  ifnot cog
+    start(115_200)
+
   Char(CB)
   
 PUB Home
-{{Send cursor to home position (top-left).}}
+{{Send cursor to home position (top-left).
+
+Example:
+  pst.Home
+}}
   
+  ifnot cog
+    start(115_200)
+
   Char(HM)
   
 PUB Position(x, y)
-{{Position cursor at column x, row y (from top-left).}}
+{{Position cursor at column x, row y (from
+top-left).
+
+Example:
+  'Position cursor 5 spaces to the right
+  'and 6 carriage returns from the top.
+  pst.Position(5, 6)
+}}
   
+  ifnot cog
+    start(115_200)
+
   Char(PC)
   Char(x)
   Char(y)
   
 PUB PositionX(x)
-{{Position cursor at column x of current row.}}
+{{Position cursor at column x of current row.
+
+Example:
+  'Position cursor 5 spaces to the right in
+  'whatever row the cursor is located.
+  pst.PositionX(5)
+}}
   Char(PX)
   Char(x)
   
 PUB PositionY(y)
-{{Position cursor at row y of current column.}}
+{{Position cursor at row y of current column.
+Example:
+  'Position cursor 6 carriage returns down
+  'from its current position.
+  pst.PositionY(6)
+}}
+  ifnot cog
+    start(115_200)
+
   Char(PY)
   Char(y)
 
 PUB NewLine
-{{Send cursor to new line (carriage return plus line feed).}}
+{{Send cursor to new line (carriage return
+plus line feed).}}
   
+  ifnot cog
+    start(115_200)
+
   Char(NL)
   
 PUB LineFeed
-{{Send cursor down to next line.}}
+{{Send cursor down to next line.
+
+Example:
+  pst.LineFeed
+}}
   
+  ifnot cog
+    start(115_200)
+
   Char(LF)
   
 PUB MoveLeft(x)
-{{Move cursor left x characters.}}
+{{Move cursor left x characters.
+
+Example:
+  'Move cursor 3 characters to the left.
+  pst.MoveLeft(3)
+}}
   
+  ifnot cog
+    start(115_200)
+
   repeat x
     Char(ML)
   
 PUB MoveRight(x)
-{{Move cursor right x characters.}}
+{{Move cursor right x characters.
+
+Example:
+  'Move cursor 3 characters to the right.
+  pst.MoveRight(3)
+}}
   
+  ifnot cog
+    start(115_200)
+
   repeat x
     Char(MR)
   
 PUB MoveUp(y)
-{{Move cursor up y lines.}}
+{{Move cursor up y lines.
+
+Example:
+  'Move cursor 3 lines upward.
+  pst.MoveUp(3)
+}}
   
+  ifnot cog
+    start(115_200)
+
   repeat y
     Char(MU)
   
 PUB MoveDown(y)
-{{Move cursor down y lines.}}
+{{Move cursor down y lines.
+
+Example:
+  'Move cursor 3 lines down.
+  pst.MoveDown(3)
+}}
   
+  ifnot cog
+    start(115_200)
+
   repeat y
     Char(MD)
   
 PUB Tab
-{{Send cursor to next tab position.}}
+{{Send cursor to next tab position.
+
+Example:
+  pst.Tab
+}}
   
+  ifnot cog
+    start(115_200)
+
   Char(TB)
   
 PUB Backspace
-{{Delete one character to left of cursor and move cursor there.}}
+{{Delete one character to left of cursor and
+move cursor there.
+
+Example:
+  pst.Backspace
+}}
   
+  ifnot cog
+    start(115_200)
+
   Char(BS)
   
 PUB Beep
-{{Play bell tone on PC speaker.}}
+{{Play bell tone on PC speaker.
+
+Example:
+  pst.Bell
+}}
   
+  ifnot cog
+    start(115_200)
+
   Char(BP)
   
 PUB RxCount : count
 {{Get count of characters in receive buffer.
-  Returns: number of characters waiting in receive buffer.}}
+  Returns: number of characters waiting in
+  receive buffer.
+
+Examples:
+  'Store how many characters are in the
+  'input buffer in a variable named val.
+  '...code omitted
+  VAR
+    word val
+  PUB Go
+  '...code omitted
+    val := pst.RxCount
+
+  'Clear the buffer if it has more than
+  '20 characters
+  VAR
+    byte mystr(21)
+  PUB Go
+  '...code omitted
+    if pst.RxCount > 20
+      pst.MaxStr(@myStr, 20)
+  '...       
+}}
+
+  ifnot cog
+    start(115_200)
 
   count := rx_head - rx_tail
   count -= BUFFER_LENGTH*(count < 0)
 
 PUB RxFlush
-{{Flush receive buffer.}}
+{{Flush receive buffer.
+
+This method can be useful if you know there
+will be a bunch of characters in the buffer
+that do not matter to your application.  For
+example, maybe the first 5 seconds of
+characters that get sent don't matter
+
+Example:
+
+  if t > 5
+    pst.RxFlush
+}}
+
+  ifnot cog
+    start(115_200)
 
   repeat while rxcheck => 0
     
@@ -340,7 +806,7 @@ PRI RxCheck : bytechr
     bytechr := rx_buffer[rx_tail]
     rx_tail := (rx_tail + 1) & BUFFER_MASK
 
-PUB StrToBase(stringptr, base) : value | chr, index
+PRI StrToBase(stringptr, base) : value | chr, index
 {Converts a zero terminated string representation of a number to a value in the designated base.
 Ignores all non-digit characters (except negative (-) when base is decimal (10)).}
 
@@ -352,12 +818,6 @@ Ignores all non-digit characters (except negative (-) when base is decimal (10))
   if (base == 10) and (byte[stringptr] == "-")                                  'If decimal, address negative sign; ignore otherwise
     value := - value
        
-PUB strJoin(strA, strB)
-'' // strA - Address of the string to concatenate a string to.
-'' // strB - Address of where to get the string to concatenate.
-  bytemove((strA + strsize(strA)), strB, (strsize(strB) + 1))
-  return strA
-  
 DAT
 
 '***********************************
@@ -511,25 +971,57 @@ txcnt                   res     1
 txcode                  res     1
 
 {{
+File: Parallax Serial Terminal Plus.spin
+Date: 2012.05.12
+Version: 1.01.1
+  - Does not require a Start method call
+  - If a method other than Start is
+    called first, this object starts
+    automatically, and its settings
+    will match the Parallax Serial
+    Terminal software's defaults.
 
-┌──────────────────────────────────────────────────────────────────────────────────────┐
-│                           TERMS OF USE: MIT License                                  │                                                            
-├──────────────────────────────────────────────────────────────────────────────────────┤
-│Permission is hereby granted, free of charge, to any person obtaining a copy of this  │
-│software and associated documentation files (the "Software"), to deal in the Software │ 
-│without restriction, including without limitation the rights to use, copy, modify,    │
-│merge, publish, distribute, sublicense, and/or sell copies of the Software, and to    │
-│permit persons to whom the Software is furnished to do so, subject to the following   │
-│conditions:                                                                           │                                            │
-│                                                                                      │                                               │
-│The above copyright notice and this permission notice shall be included in all copies │
-│or substantial portions of the Software.                                              │
-│                                                                                      │                                                │
-│THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,   │
-│INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A         │
-│PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT    │
-│HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION     │
-│OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE        │
-│SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                                │
-└──────────────────────────────────────────────────────────────────────────────────────┘
+Authors: Jeff Martin, Andy Lindsay, Chip Gracey  
+
+This object is heavily based on
+FullDuplexSerialPlus (by Andy Lindsay),
+which is itself heavily based on
+FullDuplexSerial (by Chip Gracey).
+
+Copyright (c) 2012 Parallax, Inc.
+
+┌────────────────────────────────────────────┐
+│TERMS OF USE: MIT License                   │
+├────────────────────────────────────────────┤
+│Permission is hereby granted, free of       │
+│charge, to any person obtaining a copy      │
+│of this software and associated             │
+│documentation files (the "Software"),       │
+│to deal in the Software without             │
+│restriction, including without limitation   │
+│the rights to use, copy, modify, merge,     │
+│publish, distribute, sublicense, and/or     │
+│sell copies of the Software, and to permit  │
+│persons to whom the Software is furnished   │
+│to do so, subject to the following          │
+│conditions:                                 │
+│                                            │
+│The above copyright notice and this         │
+│permission notice shall be included in all  │
+│copies or substantial portions of the       │
+│Software.                                   │
+│                                            │
+│THE SOFTWARE IS PROVIDED "AS IS", WITHOUT   │
+│WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,   │
+│INCLUDING BUT NOT LIMITED TO THE WARRANTIES │
+│OF MERCHANTABILITY, FITNESS FOR A           │
+│PARTICULAR PURPOSE AND NONINFRINGEMENT. IN  │
+│NO EVENT SHALL THE AUTHORS OR COPYRIGHT     │
+│HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR │
+│OTHER LIABILITY, WHETHER IN AN ACTION OF    │
+│CONTRACT, TORT OR OTHERWISE, ARISING FROM,  │
+│OUT OF OR IN CONNECTION WITH THE SOFTWARE   │
+│OR THE USE OR OTHER DEALINGS IN THE         │
+│SOFTWARE.                                   │
+└────────────────────────────────────────────┘
 }}
